@@ -1,0 +1,108 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - My ASP.NET Application</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+
+</head>
+<body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                @Html.ActionLink("Gig Hup", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li>@Html.ActionLink("Add a Gig", "Create", "Gigs")</li>
+                </ul>
+                @Html.Partial("_LoginPartial")
+            </div>
+        </div>
+    </div>
+    <div class="container body-content">
+        @RenderBody()
+        <hr />
+        <footer>
+            <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
+        </footer>
+    </div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @Scripts.Render("~/bundles/app")
+
+    @RenderSection("scripts", required: false)
+    <script type="text/x-handlebars-template" id="notifications-template">
+        <ul class="notifications">
+            <%
+            _.each(notifications,function(notification){
+            if(notification.Type==1){ %>
+            <li><strong><%=notification.Gig.Artist.Name %></strong> has cancled the gig at <%=notification.Gig.Venue %> at <%=notification.Gig.DateTime%>.</li>
+            <% }
+            else if (notification.Type == 2) {
+            var changes = [],
+            originalValues = [],
+            newValues = [];
+
+            if (notification.OriginalVenue != notification.Gig.Venue) {
+            changes.push('Venue');
+            originalValues.push(notification.OriginalVenue);
+            newValues.push(notification.Gig.Venue);
+            }
+
+            if (notification.OriginalDateTime!= notification.Gig.DateTime) {
+            changes.push('date/time');
+            originalValues.push(notification.OriginalDateTime);
+            newValues.push(notification.Gig.DateTime);
+            }
+
+            %>
+            <li><%= notification.Gig.Artist.Name %> has changed the <%= changes.Join(' and ') %> of the gig from <%= originalValues.Join('/') %> to <%= newValues.Join('/') %></li>
+            <%
+            }
+
+            })
+            %>
+        </ul>
+    </script>
+    <script>
+        $(document).ready(function () {
+            $.getJSON("/api/notifications", function (notifications) {
+                console.log(notifications);
+                if (notifications == 0)
+                    return;
+                
+                $(".js-ns-count").text(notifications.length).removeClass("hide");
+
+                $(".notifications").popover({
+                    html: true,
+                    title: "Notifications",
+                    content: function () {
+                        var compiled = _.template($("#notifications-template").html());
+                        return compiled({ notifications: notifications });
+                        
+                    },
+                    placement: "bottom"
+                }).on("shown.bs.popover", function () {
+                    $.post("/api/notifications/AsRead")
+                        .done(function () {
+                            $(".js-ns-count").text("").addClass("hide");
+                        });
+
+                        });
+            });
+
+           
+
+        });
+    </script>
+</body>
+</html>

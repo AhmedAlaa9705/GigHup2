@@ -1,0 +1,110 @@
+﻿@model  GigHup2.ViewModels.HomeViewModel
+@{
+    ViewBag.Title = "Home Page";
+}
+<h3 class="alert alert-info"><strong>@Model.Heading</strong></h3>
+@using (Html.BeginForm("Search","Gigs"))
+{
+    <div class="form-group">
+        <div class="input-group" style="width:300px">
+            @Html.TextBoxFor(a => a.SearchTerm, new { @class = "form-control", placeholder ="Search by Artist ,Genre or Location" })
+            <span class="input-group-addon">
+                <i class="glyphicon glyphicon-search"></i>
+            </span>
+
+
+        </div>
+    </div>
+ 
+}
+
+<ul class="gigs asd">
+    @foreach ( var item in Model.UpcomingGigs)
+    {
+        <li>
+            <div class="date">
+                <div class="month">
+                    @item.DateTime.ToString("MMM")
+                </div>
+                <div class="day">
+                    @item.DateTime.ToString("d ")
+
+                </div>
+            </div>
+            <div class="details">
+                <span class="artist">
+                  @Html.ActionLink(item.Artist.Name, "Details","Gigs",new { id=item.Id},null)
+                    @if (item.IsCancled)
+                    {
+                        <span class="label-warning">Cancled</span>
+                    }
+                    @if (Model.ShowAction)
+                    {
+                        <button data-follow="@item.ArtistId" class="btn btn-link btn-sm js-follow">Follow</button>
+
+                    }
+                </span>
+                <span class="genre">
+                    @item.Genre.Name
+                    @if (Model.ShowAction&&!item.IsCancled)
+                    {
+                        <button data-gigid="@item.Id" class="btn @(Model.attendences.Contains(item.Id)?"btn-info":"btn-default")  btn-sm pull-right js-attend">Going?</button>
+
+                    }
+                </span>
+            </div>
+        </li>
+    }
+</ul>
+@section scripts{
+    <script>
+        $(document).ready(function () {
+
+            $(".js-attend").click(function (e) {
+                var button = $(e.target);
+                if (button.hasClass("btn-default")) {
+                    $.post("/api/attendences", { "gigid": button.attr("data-gigid") })
+                        .done(function () {
+                            button
+                                .removeClass("btn-default")
+                                .addClass("btn-info")
+                                .text("Going");
+                        })
+                        .fail(function () {
+                            alert("Somthing faild");
+                        });
+                } else {
+                    $.ajax({
+                        url: "/api/attendences/" + button.attr("data-gigid"),
+                        method: "DELETE"
+                    })
+                        .done(function () {
+                            button.removeClass("btn-info")
+                                .addClass("btn-default")
+                                .text("Going?");
+                        })
+                        .fail(function () {
+                            alert("somthing falid")
+                        })
+                }
+
+            });
+        });
+
+       
+        $(document).ready(function () {
+            $(".js-follow").click(function (e) {
+                var button = $(e.target);
+                $.post("/api/followings", { "followeeId": button.attr("data-follow") })
+                    .done(function () {
+                        button
+                       .text("Following");
+                    })
+                    .fail(function () {
+                        alert("Somthing faild");
+                    });
+            });
+        });
+
+    </script>
+    }
